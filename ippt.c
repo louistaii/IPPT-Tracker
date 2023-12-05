@@ -2,90 +2,199 @@
   #include <stdlib.h>
   #include <time.h>
 
-  int curr_day;
-  int curr_month;
-  int curr_year;
-  int age;
-  int bday;
+
+  // declaring global variables
+  int curr_day; int curr_month; int curr_year;
+  int age;      int bday;       int agegrp;
+
   void menu();
 
-  /*
-  int pupoints (int agerange, int pushup)
-  {
-    int points = 0;
-    int maxrep = 60 + 1 - agerange;
-    int minrep = 15 + 1 - agerange;
-    if (pushup < minrep)
-    {
-      points+=0;
-    }
-    else if (pushup <=minrep + 10)
-    {
-      points += pushup - minrep;
-    }
-    else
-    {
-      points = 15
-        for (long i = minrep; i<=maxrep; i+=4)
-        {
-          if (pushup <= i)
-          {
 
-          }
-          else
-          {
-            points +=
-          }
-                }
+  // Returns gold/silver/pass based of points achieved
+  char *calctier (int points)
+  {
+    if (points >= 85)
+    {
+      return "Gold";
     }
+    if (points >= 75)
+    {
+      return "Silver";
+    }
+    if (points >= 61)
+    {
+      return "Pass w Incentive";
+    }
+    if (points >= 51)
+    {
+      return "Pass";
+    }
+    return "Fail";
   }
 
 
-  int totalpoints(int pushup, int situp, int run)
+  //opens and read pushup/ situp score chart
+  int readchart(int rep, char* table)
   {
-    int agegrp = 1;
-    int points = 0;
-
-    //find age grp
-    for(long i = 22; i<=60; i+=2)
+    FILE *chart = fopen(table, "r");
+    int count = 0;
+    if (chart == NULL)
     {
-      if (age <= i)
+      printf("Chart does not exist");
+      return 0;
+    }
+    char line[300];
+    rep = 60-rep;
+    while (fgets(line,sizeof line, chart)!= NULL)
+    {
+      if (count == rep)
       {
-        break;
+        //printf("%s", line);
+        int tens = (line[agegrp * 3] -'0');
+        int ones =(line[ 1 + agegrp * 3] -'0');
+        //printf("%d", tens);
+        //printf("%d", ones);
+        return tens *10 + ones;
       }
-      else
-      {
-        agegrp+=1;
-      }
+      count +=1;
     }
 
-    points = pupoints(agegrp, pushup) + supoints(agegrp, situp) + runpoint(agegrp, run);
+    fclose(chart);
+  }
+
+
+
+
+  // calculate pushup points by comparing reps to chart
+  int pupoints (int rep)
+  {
+    int points;
+    int maxrep = 60 + 1 - agegrp;   //rep that gives full points
+    int minrep = 15 + 1 - agegrp;   // rep that gives least points
+    if (rep >= maxrep)
+    {
+      return 25;
+       }
+    if (rep < minrep)
+    {
+      return 0;
+    }
+
+    char tablerow[300];
+    points = readchart(rep, "data/pushuptable.txt");
     return points;
   }
 
 
 
 
-  */
+  // calculate situp points by comparing reps to chart
+  int supoints (int rep)
+  {
+    int points;
+    int maxrep = 60 + 1 - agegrp;
+    int minrep = 15 + 1 - agegrp;
+    if (rep >= maxrep)
+    {
+      return 25;
+    }
+    if (rep < minrep)
+    {
+      return 0;
+    }
+
+    char tablerow[300];
+    points = readchart(rep, "data/situptable.txt");
+    return points;
+  }
 
 
+
+  //calculate 2.4 points
+  int runpoints(int time)
+  {
+    if (time <= 510)
+    {
+      return 50;
+    }
+    if (time > 1100)
+    {
+      return 0;
+    }
+
+    // find row of table where timing lies in
+    int row;
+    if (time%10 != 0)
+    {
+      row = (time -500)/10;
+    }
+    else
+    {
+      row = (time-500)/10 - 1;
+    }
+
+    //open table
+    FILE *chart = fopen("data/runtable.txt", "r");
+    int count = 0;
+    if (chart == NULL)
+    {
+      printf("Chart does not exist");
+      return 0;
+    }
+    char line[300];
+    while (fgets(line,sizeof line, chart)!= NULL)
+    {
+      if (count == row)
+      {
+        int tens = (line[2+agegrp * 3] -'0');    //finds the two columns containing the points
+        int ones = (line[ 3 + agegrp * 3] -'0');
+        return tens *10 + ones;
+      }
+      count +=1;
+    }
+
+    fclose(chart);
+  }
+
+
+
+  //finds age group for scoring using given age
+  void set_age_grp()
+  {
+    agegrp = 1;
+    for(long i = 22; i<=60; i+=2)
+    {
+      if (age <= i)
+      {
+        break;
+      }
+      agegrp += 1;
+    }
+  }
 
 
 
   void editage()
   {
-     system("cls");
+    system("cls");
 
 
-    FILE *saveage = fopen("age.txt", "w"); //open age.txt to write
-
-    if (saveage == NULL)
+    FILE *saveage = fopen("data/age.txt", "w"); //open age.txt to write
+      if (saveage == NULL)
     {
       printf("File does not exist");
     }
 
-    printf(" Enter your DOB (DDMMYYYY):");
+    printf(" Enter your D.O.B (DDMMYYYY):");
     scanf("%d", &bday);
+
+    if (bday == NULL)
+    {
+      fclose(saveage);
+      menu();
+      return;
+    }
+
 
     //calc date month and year base off input
     int birthmonth = (bday/10000) % 100;
@@ -96,8 +205,8 @@
 
     if (birthyear >= curr_year)  //in the case of an invalid year input
     {
-       printf("Enter valid age");
-       editage();
+      printf(" Enter valid age");
+      editage();
     }
 
 
@@ -109,12 +218,15 @@
     else
     {
       age = curr_year - birthyear -1;
-    }
+       }
 
-      //saving age and bday to file
+
+
+    //saving age and bday to file
     int savedint = bday*100 + age;
     fprintf(saveage, "%d", savedint);
     fclose(saveage);
+    set_age_grp();
     menu();
   }
 
@@ -122,18 +234,33 @@
 
   void newworkout()
   {
+    system("cls");
     int stats[3];
-    printf("Enter Pushup reps, Situp reps and 2.4km run time in seconds: \n");
-    FILE *workoutlog = fopen("log.txt", "a");
+    printf(" Enter Pushup reps, Situp reps and 2.4km run time in seconds: \n");
+    //FILE *workoutlog = fopen("log.txt", "a");
     for (long i = 0; i<3; i+=1)
     {
       scanf("%d", &stats[i]);
-      fprintf(workoutlog, "%d\n", stats[i]);
+      //fprintf(workoutlog, "%d\n", stats[i]);
     }
-    fclose(workoutlog);
-    printf("Goodjob!");
-   // printf("%d" , totalpoints(stats[0],stats[1],stats[2]));
-    //stats
+    //fclose(workoutlog);
+
+
+    int pushup = pupoints(stats[0]);
+    int situp = supoints(stats[1]);
+    int run = runpoints(stats[2]);
+
+    printf(" Goodjob! \n Points for Pushups: %d Points \n",pushup);
+    printf(" Points for Situps: %d Points \n", situp);
+    printf(" Points for 2.4km run: %d Points \n", run);
+    printf(" Total Points: %d Points, ", pushup + situp + run);
+    printf("%s\n", calctier(pushup+situp+run));
+    
+    
+    printf("\n Press ENTER to return to menu\n");
+    char next;
+    scanf("%s", &next);
+    menu();
   }
 
 
@@ -149,7 +276,7 @@
     else if(choice == 2)
     {
       newworkout();
-        }
+    }
     else
     {
       printf("Please enter valid input: \n");
@@ -172,7 +299,7 @@
     {
       daycount = birthdate - curr_day;
       return daycount;
-    }
+       }
 
     if (birthmonth > curr_month)
     {
@@ -187,7 +314,7 @@
       for (int i = curr_month-1; i< 12;i+=1)
       {
         daycount += dayinmonth[i];
-    }
+      }
       for (int i = 0; i < birthmonth-1;i+=1)
       {
         daycount += dayinmonth[i];
@@ -202,28 +329,28 @@
   }
 
 
-  void menu()
+  void menu()                       //main menu
   {
     system("cls");
-    int best = 10101;
-    double rank = 1;
-    int cycle = cycledays();
-    printf("   ###  ###  ### ### \n");
-    printf("    #   # #  # #  #  \n");
-    printf("    #   ###  ###  #  \n");
-    printf("    #   #    #    #  \n");
-    printf("   ###  #    #    #  \n");
+    int best = 70;
+    char* tier = calctier(best);   //calculating tier for best PB score
+    int cycle = cycledays();       // days left until next birthday = end of ippt cycle
+    printf("   ###  ###  ###  ### \n");
+    printf("    #   # #  # #   #  \n");
+    printf("    #   ###  ###   #  \n");
+    printf("    #   #    #     #  \n");
+    printf("   ###  #    #     #  \n");
 
-    printf("\n 1.) Age: %d \n", age);
-    printf(" 2.) New Workout \n");
+    printf("\n 1. Age: %d \n", age);
+    printf(" 2. New Workout \n");
     printf("\n");
+    printf(" Age Group: %d \n", agegrp);
     printf(" IPPT cycle ends in: %d days \n", cycle);
     printf(" Personal Best: %d points, ", best);
-    printf("%lf \n", rank);
+    printf("%s \n", tier);
     printf("\n Select number to edit: ");
     choose();
   }
-
 
 
   int main()
@@ -237,7 +364,7 @@
 
 
     // load presaved age and bday
-    FILE *readage = fopen("age.txt", "r");
+    FILE *readage = fopen("data/age.txt", "r");
     int loadage;
     fscanf(readage,"%d", &loadage);
     if (loadage == NULL)
@@ -248,6 +375,9 @@
     fclose(readage);
     age = loadage %100;
     bday = loadage/100;
+
+    // calculate and set age grp for ippt scoring
+    set_age_grp();
     menu();
     return 0;
   }

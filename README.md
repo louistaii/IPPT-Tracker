@@ -1,10 +1,10 @@
-IPPT workout tracker 
+IPPT Workout Tracker 
 
 
 Description:
 Written in C
 Personal project to sum up lessons learnt in NUS CS1010 module (conditionals, loops, arrays, struct)
-Currently requires 1 txt files (age.txt) in the same folder to run
+Currently requires "data" folder in the same directory to run
 
 
 Features:
@@ -15,6 +15,10 @@ Store and compare with Personal best workouts
 
 
 Update log
-0412: 
+041223: 
 Main menu, day counter and age group finder
 Storing and reading data 
+
+051223:
+IPPT point calculation by opening and comparing to external point chart
+
