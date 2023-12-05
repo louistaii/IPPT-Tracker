@@ -2,8 +2,8 @@ IPPT Workout Tracker
 
 
 Description:
-Written in C
-Personal project to sum up lessons learnt in NUS CS1010 module (conditionals, loops, arrays, struct)
+Written in C. 
+Personal project to sum up lessons learnt in NUS CS1010 module (conditionals, loops, arrays, struct). 
 Currently requires "data" folder in the same directory to run
 
 
