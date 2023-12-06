@@ -1,13 +1,25 @@
-#include <stdio.h>
+  #include <stdio.h>
   #include <stdlib.h>
   #include <time.h>
 
 
   // declaring global variables
   int curr_day; int curr_month; int curr_year;
-  int age;      int bday;       int agegrp;
-
+  int age;      int bday;       int agegrp;  int loadage;
+  int pbpu;     int pbsu;       int pbrun;   int pbpoints; 
+  
   void menu();
+
+
+  void update_savefile()
+  {
+    FILE *newpb = fopen("data/savefile.txt", "w");
+    fprintf(newpb, "%d\n", pbpu);
+    fprintf(newpb, "%d\n", pbsu);
+    fprintf(newpb, "%d\n", pbrun);
+    fprintf(newpb, "%d", loadage);
+    fclose(newpb);
+ }
 
 
   // Returns gold/silver/pass based of points achieved
@@ -80,7 +92,6 @@
       return 0;
     }
 
-    char tablerow[300];
     points = readchart(rep, "data/pushuptable.txt");
     return points;
   }
@@ -102,8 +113,7 @@
     {
       return 0;
     }
-
-    char tablerow[300];
+    
     points = readchart(rep, "data/situptable.txt");
     return points;
   }
@@ -178,23 +188,14 @@
   {
     system("cls");
 
-
-    FILE *saveage = fopen("data/age.txt", "w"); //open age.txt to write
-      if (saveage == NULL)
-    {
-      printf("File does not exist");
-    }
-
     printf(" Enter your D.O.B (DDMMYYYY):");
     scanf("%d", &bday);
 
     if (bday == NULL)
     {
-      fclose(saveage);
       menu();
       return;
     }
-
 
     //calc date month and year base off input
     int birthmonth = (bday/10000) % 100;
@@ -218,18 +219,28 @@
     else
     {
       age = curr_year - birthyear -1;
-       }
+    }
 
 
 
     //saving age and bday to file
-    int savedint = bday*100 + age;
-    fprintf(saveage, "%d", savedint);
-    fclose(saveage);
+    loadage = bday*100 + age;
+    update_savefile();
     set_age_grp();
     menu();
   }
 
+
+  void calcstat(int initial, int pb)
+  {
+    if (pb - initial > 0)
+    {
+      printf(" (%d reps to PB: %d)\n", pb-initial, pb);
+      return;
+    }
+    printf(" (PERSONAL BEST)\n");
+    return;
+  }
 
 
   void newworkout()
@@ -246,20 +257,41 @@
     //fclose(workoutlog);
 
 
+
     int pushup = pupoints(stats[0]);
     int situp = supoints(stats[1]);
     int run = runpoints(stats[2]);
+    int total = pushup + situp+ run;
 
-    printf(" Goodjob! \n Points for Pushups: %d Points \n",pushup);
-    printf(" Points for Situps: %d Points \n", situp);
-    printf(" Points for 2.4km run: %d Points \n", run);
-    printf(" Total Points: %d Points, ", pushup + situp + run);
+    //in the case of new PB
+    if (total > pbpoints)
+    {
+      pbpu = stats[0];
+      pbsu = stats[1];
+      pbrun = stats[2]; 
+      update_savefile();
+      printf("\n NEW PERSONAL BEST!");
+    }
+  
+    printf(" GOODJOB! \n Pushups: %d Points",pushup);
+    calcstat(stats[0], pbpu); //edit to points
+    printf(" Situps: %d Points", situp);
+    calcstat(stats[1],pbsu);
+    printf(" 2.4km run: %d Points", run);
+    if (stats[2]>pbrun)
+    {
+      printf(" (%ds to PB)", stats[2]-pbrun);
+    }
+    else
+    {
+      printf(" PERSONAL BEST");
+    }
+    printf("\n Total: %d Points, ", total);
     printf("%s\n", calctier(pushup+situp+run));
     
-    
-    printf("\n Press ENTER to return to menu\n");
+    printf("\n Enter any key to return to menu");
     char next;
-    scanf("%s", &next);
+    scanf(" %c",&next);
     menu();
   }
 
@@ -287,7 +319,7 @@
   int cycledays()
   {
 
-    int daycount =0;
+    int daycount = 0;
     int birthmonth = (bday/10000) % 100;
     int birthdate = bday/1000000;
     int birthyear = bday%10000;
@@ -329,12 +361,13 @@
   }
 
 
-  void menu()                       //main menu
+  void menu()  //main menu
   {
     system("cls");
-    int best = 70;
-    char* tier = calctier(best);   //calculating tier for best PB score
+    pbpoints = pupoints(pbpu) + supoints(pbsu) + runpoints(pbrun); //calculate ppersonal best points base off reps
+    char* tier = calctier(pbpoints);   //calculating tier for best PB score
     int cycle = cycledays();       // days left until next birthday = end of ippt cycle
+
     printf("   ###  ###  ###  ### \n");
     printf("    #   # #  # #   #  \n");
     printf("    #   ###  ###   #  \n");
@@ -344,10 +377,13 @@
     printf("\n 1. Age: %d \n", age);
     printf(" 2. New Workout \n");
     printf("\n");
-    printf(" Age Group: %d \n", agegrp);
+    printf(" Age group for scoring: %d \n", agegrp);
     printf(" IPPT cycle ends in: %d days \n", cycle);
-    printf(" Personal Best: %d points, ", best);
+    printf("\n PERSONAL BEST: \n %d points, ", pbpoints);
     printf("%s \n", tier);
+    printf(" Pushups: %d reps\n", pbpu);
+    printf(" Situps: %d reps\n", pbsu);
+    printf(" 2.4km run: %ds\n", pbrun);
     printf("\n Select number to edit: ");
     choose();
   }
@@ -362,22 +398,44 @@
     curr_month = tm.tm_mon+1;
     curr_year = tm.tm_year + 1900;
 
-
-    // load presaved age and bday
-    FILE *readage = fopen("data/age.txt", "r");
-    int loadage;
-    fscanf(readage,"%d", &loadage);
-    if (loadage == NULL)
+    //load PB , birthday and age data from savefile.txt
+    FILE *chart = fopen("data/savefile.txt", "r");
+    int count = 0;
+    if (chart == NULL)
     {
-      age = 0;
-      bday = 0;
+      printf("savefile does not exist");
+      return 1;
     }
-    fclose(readage);
+    char line[100];
+    while (fgets(line,sizeof line, chart)!= NULL)
+    {
+      if (count == 0)
+      {
+        pbpu = atoi(line);
+      }
+      else if (count == 1)
+      {
+        pbsu = atoi(line);
+      }
+      else if (count == 2)
+      {
+        pbrun = atoi(line);
+      }
+      else
+      {
+        loadage = atoi(line);
+      }
+      count +=1;
+    }
     age = loadage %100;
     bday = loadage/100;
 
     // calculate and set age grp for ippt scoring
-    set_age_grp();
+    set_age_grp(); 
+
     menu();
     return 0;
+
+   
+
   }
