@@ -22,7 +22,7 @@
  }
 
 
-  // Returns gold/silver/pass based of points achieved
+  //returns gold/silver/pass based of points achieved
   char *calctier (int points)
   {
     if (points >= 85)
@@ -53,19 +53,17 @@
     if (chart == NULL)
     {
       printf("Chart does not exist");
+      fclose(chart);
       return 0;
     }
     char line[300];
-    rep = 60-rep;
+    rep = 60-rep;  //find row in table to compare
     while (fgets(line,sizeof line, chart)!= NULL)
     {
       if (count == rep)
       {
-        //printf("%s", line);
         int tens = (line[agegrp * 3] -'0');
-        int ones =(line[ 1 + agegrp * 3] -'0');
-        //printf("%d", tens);
-        //printf("%d", ones);
+        int ones = (line[ 1 + agegrp * 3] -'0');
         return tens *10 + ones;
       }
       count +=1;
@@ -77,34 +75,37 @@
 
 
 
-  // calculate pushup points by comparing reps to chart
+  //calculate pushup points
   int pupoints (int rep)
   {
     int points;
     int maxrep = 60 + 1 - agegrp;   //rep that gives full points
     int minrep = 15 + 1 - agegrp;   // rep that gives least points
+    
     if (rep >= maxrep)
     {
       return 25;
-       }
+    }
+
     if (rep < minrep)
     {
       return 0;
     }
 
-    points = readchart(rep, "data/pushuptable.txt");
+    points = readchart(rep, "data/pushuptable.txt");   //comparing reps to chart
     return points;
   }
 
 
 
 
-  // calculate situp points by comparing reps to chart
+  //calculate situp points
   int supoints (int rep)
   {
     int points;
     int maxrep = 60 + 1 - agegrp;
     int minrep = 15 + 1 - agegrp;
+    
     if (rep >= maxrep)
     {
       return 25;
@@ -114,7 +115,7 @@
       return 0;
     }
     
-    points = readchart(rep, "data/situptable.txt");
+    points = readchart(rep, "data/situptable.txt");  //comparing reps to chart
     return points;
   }
 
@@ -136,7 +137,7 @@
     int row;
     if (time%10 != 0)
     {
-      row = (time -500)/10;
+      row = (time - 500)/10;
     }
     else
     {
@@ -149,6 +150,7 @@
     if (chart == NULL)
     {
       printf("Chart does not exist");
+      fclose(chart);
       return 0;
     }
     char line[300];
@@ -206,7 +208,6 @@
 
     if (birthyear >= curr_year)  //in the case of an invalid year input
     {
-      printf(" Enter valid age");
       editage();
     }
 
@@ -248,13 +249,11 @@
     system("cls");
     int stats[3];
     printf(" Enter Pushup reps, Situp reps and 2.4km run time in seconds: \n");
-    //FILE *workoutlog = fopen("log.txt", "a");
+  
     for (long i = 0; i<3; i+=1)
     {
       scanf("%d", &stats[i]);
-      //fprintf(workoutlog, "%d\n", stats[i]);
     }
-    //fclose(workoutlog);
 
 
 
@@ -278,7 +277,8 @@
     printf(" Situps: %d Points", situp);
     calcstat(stats[1],pbsu);
     printf(" 2.4km run: %d Points", run);
-    if (stats[2]>pbrun)
+    
+    if (stats[2]>pbrun)   //check for 2.4 PB 
     {
       printf(" (%ds to PB)", stats[2]-pbrun);
     }
@@ -286,12 +286,16 @@
     {
       printf(" PERSONAL BEST");
     }
+
     printf("\n Total: %d Points, ", total);
     printf("%s\n", calctier(pushup+situp+run));
     
-    printf("\n Enter any key to return to menu");
+    /*
+    printf("Enter any character to continue")
     char next;
     scanf(" %c",&next);
+    */
+    system("pause");   //only tested on windows. use aboved commented code if not working
     menu();
   }
 
@@ -331,7 +335,7 @@
     {
       daycount = birthdate - curr_day;
       return daycount;
-       }
+    }
 
     if (birthmonth > curr_month)
     {
@@ -365,8 +369,8 @@
   {
     system("cls");
     pbpoints = pupoints(pbpu) + supoints(pbsu) + runpoints(pbrun); //calculate ppersonal best points base off reps
-    char* tier = calctier(pbpoints);   //calculating tier for best PB score
-    int cycle = cycledays();       // days left until next birthday = end of ippt cycle
+    char* tier = calctier(pbpoints);                               //calculating tier for best PB score
+    int cycle = cycledays();                                       // days left until next birthday = end of ippt cycle
 
     printf("   ###  ###  ###  ### \n");
     printf("    #   # #  # #   #  \n");
@@ -375,15 +379,19 @@
     printf("   ###  #    #     #  \n");
 
     printf("\n 1. Age: %d \n", age);
-    printf(" 2. New Workout \n");
-    printf("\n");
+    printf(" 2. New Workout \n\n");
+  
     printf(" Age group for scoring: %d \n", agegrp);
     printf(" IPPT cycle ends in: %d days \n", cycle);
+
+    //PB stats
     printf("\n PERSONAL BEST: \n %d points, ", pbpoints);
     printf("%s \n", tier);
     printf(" Pushups: %d reps\n", pbpu);
     printf(" Situps: %d reps\n", pbsu);
     printf(" 2.4km run: %ds\n", pbrun);
+
+    
     printf("\n Select number to edit: ");
     choose();
   }
@@ -391,14 +399,14 @@
 
   int main()
   {
-    // load current date with struct
+    //load current date with struct
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     curr_day = tm.tm_mday;
     curr_month = tm.tm_mon+1;
     curr_year = tm.tm_year + 1900;
 
-    //load PB , birthday and age data from savefile.txt
+    //load PB, birthday and age data from savefile.txt
     FILE *chart = fopen("data/savefile.txt", "r");
     int count = 0;
     if (chart == NULL)
@@ -430,7 +438,7 @@
     age = loadage %100;
     bday = loadage/100;
 
-    // calculate and set age grp for ippt scoring
+    //calculate and set age grp for ippt scoring
     set_age_grp(); 
 
     menu();
