@@ -14,12 +14,15 @@ Store and compare with Personal Best workout
 
 
 
-Update log                                                                                                                         
-
+//Update log//                                                                                                                         
 051223:                                                                                                                                                                                                                                                
 IPPT point calculation by opening and comparing to external point chart
 
 061223:                                                                                                                                                                                                                                                
 Improved data storing and reading system. Detect and store personal best workouts.                                                                                      
 Calculation of statistics compared to PB upon completing workout
+
+071223:                                                                                                                                                               
+Time for 2.4km now support mins and secs instead of just secs                                                                                                                                                               
+
 

@@ -45,7 +45,7 @@
   }
 
 
-  //opens and read pushup/ situp score chart
+  //opens and read pushup or situp score chart
   int readchart(int rep, char* table)
   {
     FILE *chart = fopen(table, "r");
@@ -193,13 +193,13 @@
     printf(" Enter your D.O.B (DDMMYYYY):");
     scanf("%d", &bday);
 
-    if (bday == NULL)
+    if (bday == 0) //test for NULL input
     {
       menu();
       return;
     }
 
-    //calc date month and year base off input
+    //calculate date month and year base off input
     int birthmonth = (bday/10000) % 100;
     int birthdate = bday/1000000;
     int birthyear = bday%10000;
@@ -247,19 +247,22 @@
   void newworkout()
   {
     system("cls");
-    int stats[3];
-    printf(" Enter Pushup reps, Situp reps and 2.4km run time in seconds: \n");
-  
-    for (long i = 0; i<3; i+=1)
+    int stats[4];
+    printf(" Enter Pushup reps then Situp reps in order: \n");
+    for (long i = 0; i<2; i+=1)
     {
       scanf("%d", &stats[i]);
     }
+    printf("\n Enter 2.4km run time mins: ");
+    scanf("%d", &stats[2]);
+    printf("\n Enter 2.4km run time secs: ");
+    scanf("%d", &stats[3]);
 
-
+    int runtimeinsecs = stats[2]*60 + stats[3];
 
     int pushup = pupoints(stats[0]);
     int situp = supoints(stats[1]);
-    int run = runpoints(stats[2]);
+    int run = runpoints(runtimeinsecs);
     int total = pushup + situp+ run;
 
     //in the case of new PB
@@ -267,7 +270,7 @@
     {
       pbpu = stats[0];
       pbsu = stats[1];
-      pbrun = stats[2]; 
+      pbrun = runtimeinsecs; 
       update_savefile();
       printf("\n NEW PERSONAL BEST!");
     }
@@ -278,13 +281,22 @@
     calcstat(stats[1],pbsu);
     printf(" 2.4km run: %d Points", run);
     
-    if (stats[2]>pbrun)   //check for 2.4 PB 
+    if (runtimeinsecs>pbrun)   //check for 2.4 PB 
     {
-      printf(" (%ds to PB)", stats[2]-pbrun);
+      if (runtimeinsecs-pbrun >= 60)
+      {
+       int mins = (runtimeinsecs-pbrun) / 60;
+       int secs = (runtimeinsecs-pbrun) - mins*60;
+       printf(" (%dmins %ds to PB)", mins,secs);
+      }
+      else
+      {
+        printf(" (%ds to PB)", runtimeinsecs-pbrun);
+      }
     }
     else
     {
-      printf(" PERSONAL BEST");
+      printf(" (PERSONAL BEST)");
     }
 
     printf("\n Total: %d Points, ", total);
@@ -295,7 +307,7 @@
     char next;
     scanf(" %c",&next);
     */
-    system("pause");   //only tested on windows. use aboved commented code if not working
+    system("pause");   //only tested on windows. use above commented code if not working
     menu();
   }
 
@@ -389,10 +401,19 @@
     printf("%s \n", tier);
     printf(" Pushups: %d reps\n", pbpu);
     printf(" Situps: %d reps\n", pbsu);
-    printf(" 2.4km run: %ds\n", pbrun);
-
     
-    printf("\n Select number to edit: ");
+    if (pbrun>=60)
+    {
+      int mins = pbrun/60;
+      int secs = pbrun%60;
+      printf(" 2.4km run: %dmins %ds\n", mins,secs);
+    }
+    else
+    {
+      printf(" 2.4km run: %ds\n", pbrun);
+    }
+     
+    printf("\n Select number to enter/edit: ");
     choose();
   }
 
@@ -401,10 +422,10 @@
   {
     //load current date with struct
     time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    curr_day = tm.tm_mday;
-    curr_month = tm.tm_mon+1;
-    curr_year = tm.tm_year + 1900;
+    struct tm date = *localtime(&t);
+    curr_day = date.tm_mday;
+    curr_month = date.tm_mon+1;
+    curr_year = date.tm_year + 1900;
 
     //load PB, birthday and age data from savefile.txt
     FILE *chart = fopen("data/savefile.txt", "r");
@@ -443,7 +464,5 @@
 
     menu();
     return 0;
-
-   
 
   }
